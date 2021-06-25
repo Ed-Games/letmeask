@@ -2,6 +2,7 @@ import {useHistory, useParams} from 'react-router-dom'
 
 import logoImg from '../assets/images/logo.svg'
 import deleteImg from '../assets/images/delete.svg'
+import closeImg from '../assets/images/close.svg'
 import checkImg from '../assets/images/check.svg'
 import answerImg from '../assets/images/answer.svg'
 import {Button} from '../components/Button'
@@ -11,6 +12,7 @@ import {Question} from '../components/Question'
 import '../styles/room.scss'
 import { useRoom } from '../hooks/useRoom'
 import { database } from '../services/firebase'
+import { useState } from 'react'
 
 type RoomParams = {
     id: string,
@@ -21,6 +23,8 @@ export function AdminRoom(){
     const roomId = params.id
     const {questions, title} = useRoom(roomId)
     const history = useHistory()
+    const [modalVisible, setModalVisible,] = useState(false)
+    const [selectedQuestionId, setSelectedQuestionId] = useState('')
 
     async function handleEndRoom(){
         await database.ref(`rooms/${roomId}`).update({
@@ -30,20 +34,25 @@ export function AdminRoom(){
         history.push('/')
     }
 
+    function handleselectQuestionToDelete(questionId: string){
+        setModalVisible(true)
+        setSelectedQuestionId(questionId)
+        
+    }
+
     async function handleDeleteQuestion(questionId: string){
-        if(window.confirm('Tem certeza que deseja excluir essa pergunta?')){
-            const questionref = await database.ref(`rooms/${roomId}/questions/${questionId}`).remove()
-        }
+        await database.ref(`rooms/${roomId}/questions/${questionId}`).remove()
+        setModalVisible(false)
     }
 
     async function handlesetQuestionAsAnswered(questionId: string){
-        const questionref = await database.ref(`rooms/${roomId}/questions/${questionId}`).update({
+        await database.ref(`rooms/${roomId}/questions/${questionId}`).update({
             isAnsewered: true
         })
     }
 
     async function handleHighlightQuestion(questionId: string){
-        const questionref = await database.ref(`rooms/${roomId}/questions/${questionId}`).update({
+        await database.ref(`rooms/${roomId}/questions/${questionId}`).update({
             isHightLighted: true
         })
     }
@@ -100,7 +109,7 @@ export function AdminRoom(){
 
                                     <button 
                                     type="button"
-                                    onClick={()=> handleDeleteQuestion(question.id)} 
+                                    onClick={()=> handleselectQuestionToDelete(question.id)} 
                                     >
                                         <img src={deleteImg} alt="Remover pergunta" />
                                     </button>
@@ -109,6 +118,19 @@ export function AdminRoom(){
                         })} 
                     </div>
             </main>
+            {modalVisible && (
+                <div className="modal-overlay">
+                    <div className="content">
+                        <img src={closeImg} alt="Icone de aviso de exclusão" />
+                        <h2>Excluir pergunta</h2>
+                        <span>Tem certeza que deseja excluir esta pergunta?</span>
+                        <div className="confirmation-buttons">
+                            <button onClick={()=> setModalVisible(false)} className="cancel">Cancelar</button>
+                            <button onClick={()=>handleDeleteQuestion(selectedQuestionId)}>Sim, excluir</button>
+                        </div>
+                    </div>
+                </div>
+            ) }
         </div>
     )
 }
