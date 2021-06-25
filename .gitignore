@@ -21,4 +21,10 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-yarn.lock
+*.lock
+
+
+#others:
+plan.md
+.firebaserc
+*.cache
