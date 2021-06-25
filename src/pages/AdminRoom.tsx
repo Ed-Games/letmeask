@@ -2,7 +2,6 @@ import {useHistory, useParams} from 'react-router-dom'
 
 import logoImg from '../assets/images/logo.svg'
 import deleteImg from '../assets/images/delete.svg'
-import closeImg from '../assets/images/close.svg'
 import checkImg from '../assets/images/check.svg'
 import answerImg from '../assets/images/answer.svg'
 import {Button} from '../components/Button'
@@ -13,6 +12,7 @@ import '../styles/room.scss'
 import { useRoom } from '../hooks/useRoom'
 import { database } from '../services/firebase'
 import { useState } from 'react'
+import {Modal} from '../components/Modal'
 
 type RoomParams = {
     id: string,
@@ -25,6 +25,13 @@ export function AdminRoom(){
     const history = useHistory()
     const [modalVisible, setModalVisible,] = useState(false)
     const [selectedQuestionId, setSelectedQuestionId] = useState('')
+    const [selectedRoomId, setSelectedRoomId] = useState('')
+
+    function handleAskToDeleteRoom(){
+        setModalVisible(true)
+        setSelectedRoomId(roomId)
+        
+    }
 
     async function handleEndRoom(){
         await database.ref(`rooms/${roomId}`).update({
@@ -42,6 +49,7 @@ export function AdminRoom(){
 
     async function handleDeleteQuestion(questionId: string){
         await database.ref(`rooms/${roomId}/questions/${questionId}`).remove()
+        setSelectedQuestionId('')
         setModalVisible(false)
     }
 
@@ -66,7 +74,7 @@ export function AdminRoom(){
                         <RoomCode code={roomId}/>
                         <Button 
                         isOutlined={true} 
-                        onClick={handleEndRoom}
+                        onClick={handleAskToDeleteRoom}
                         >
                             Encerrar sala
                         </Button>
@@ -118,19 +126,25 @@ export function AdminRoom(){
                         })} 
                     </div>
             </main>
-            {modalVisible && (
-                <div className="modal-overlay">
-                    <div className="content">
-                        <img src={closeImg} alt="Icone de aviso de exclusão" />
-                        <h2>Excluir pergunta</h2>
-                        <span>Tem certeza que deseja excluir esta pergunta?</span>
-                        <div className="confirmation-buttons">
-                            <button onClick={()=> setModalVisible(false)} className="cancel">Cancelar</button>
-                            <button onClick={()=>handleDeleteQuestion(selectedQuestionId)}>Sim, excluir</button>
-                        </div>
-                    </div>
-                </div>
-            ) }
+            {selectedQuestionId? (
+                <Modal
+                isVisible={modalVisible}
+                setModalVisible={setModalVisible}
+                title="Excluir pergunta"
+                text="QUer mesmo excluir essa pergunta?"
+                handleDelete={handleDeleteQuestion}
+                deleteId={selectedQuestionId}
+                />
+            ): (
+                <Modal
+                isVisible={modalVisible}
+                setModalVisible={setModalVisible}
+                title="Encerrar sala"
+                text="QUer mesmo encerrar esta sala?"
+                handleDelete={handleEndRoom}
+                deleteId={roomId}
+            />
+            )}
         </div>
     )
 }
